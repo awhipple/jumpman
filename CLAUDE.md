@@ -4,14 +4,21 @@ You inherit `../../CLAUDE.md` (the gamelab shared stack, tools, and conventions)
 this file holds only THIS game's specifics.
 
 ## Design
-A side-scrolling platformer in the mold of the original *Super Mario Bros.* World
-1‑1, built with **100% original, hand-drawn graphics** (no imported sprites — the
-hero and goomba are hand-authored pixel grids in `src/sprites.lua`, everything else
-is procedural). Core loop: run and jump rightward across a tile course, bonk
-`?`-blocks for coins, stomp goombas, dodge pits, reach the flag.
+A side-scrolling platformer with *Super Mario Bros.*-style **physics/feel** but a
+deliberately **non-Mario look**: it's re-skinned with Kenney's CC0 **"New Platformer
+Pack"** (clean vector art) — green round-headed hero, purple slime enemy, grass/dirt
+terrain, brick & coin blocks, hex coins, green-block pillars (in place of pipes),
+and a green flag goal. Core loop: run and jump rightward across a tile course, bonk
+`?`-blocks for coins, stomp slimes, dodge pits, reach the flag.
 
-The name is a nod to Mario's debut billing as "Jumpman" in *Donkey Kong* — and
-keeps us trademark-clean while we draw our own art.
+Art lives in `assets/` (player/ enemy/ tiles/ bg/), copied from
+`asset-library/new-platformer-pack` — **CC0, no attribution required**
+(`assets/KENNEY-LICENSE.txt`). To restyle, drop in a different Kenney pack and remap
+paths in `src/sprites.lua`. (History: the first cut used hand-drawn procedural
+pixel art; we swapped to Kenney art to move it away from looking like Mario.)
+
+The name is a nod to Mario's debut billing as "Jumpman" in *Donkey Kong* —
+trademark-clean.
 
 ## Architecture
 - **`src/world.lua`** — PURE logic (no `love.*`): tile-grid AABB collision
@@ -19,14 +26,17 @@ keeps us trademark-clean while we draw our own art.
   goomba AI + stomp, coins/`?`-blocks, flag goal. Fully busted-tested.
 - **`src/level.lua`** — the course, built **programmatically** (not hand-aligned
   ASCII) so column placement is exact and verifiable. Returns `{w,h,grid,spawns}`.
-- **`src/sprites.lua`** — all rendering / original art (the `love.*` edge).
-- **`src/scene.lua`** — camera, visible-tile culling, HUD, win overlay; wires
-  input → world → sprites.
+- **`src/sprites.lua`** — rendering edge (the `love.*` side): loads the Kenney PNGs
+  from `assets/` and draws player/enemy/tiles/coins/background (image cache + simple
+  walk-cycle animation off the wall clock).
+- **`src/scene.lua`** — camera, visible-tile culling, HUD (with readability bars),
+  win overlay; wires input → world → sprites.
 - **`src/input.lua`** — action map (below).
 
 ### Tile glyphs (`level.lua` / `world.lua`)
 `#` ground · `B` brick (breakable only when big) · `?` coin-block → `U` spent ·
-`P` pipe · `o` coin · `F` flag pole · `=` castle/base. Spawns: `@` player, `g` goomba.
+`P` solid pillar (drawn as a green block; logic still treats it like the old pipe) ·
+`o` coin · `F` flag pole · `=` castle/base. Spawns: `@` player, `g` slime.
 
 ## Controls (gamepad-first; keyboard mirrors)
 | action | keyboard | gamepad |
@@ -39,8 +49,8 @@ keeps us trademark-clean while we draw our own art.
 Harness example: `tools/shot jumpman --keys "right+run:54,jump+right:14,right:28"`.
 
 ## Status / TODO
-Working: physics, collision, camera, goombas + stomp, coins, `?`-blocks, flag win,
-death/respawn, HUD, parallax background. 14 specs green.
+Working: physics, collision, camera, slimes + stomp, coins, `?`-blocks, flag win,
+death/respawn, HUD, parallax background, **Kenney CC0 art re-skin**. 14 specs green.
 Next: mushroom power-up (big/small code paths exist but no spawn yet) · flag-slide
 + level-complete sequence · more enemies (koopa) · sound · additional courses ·
 juice (stomp squash already in; add coin-collect sparkle, landing dust).

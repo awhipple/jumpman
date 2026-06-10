@@ -32,6 +32,10 @@ function scene.update(dt)
 end
 
 local function drawHUD(w)
+  -- translucent bars so text stays readable over any background
+  love.graphics.setColor(0, 0, 0, 0.38)
+  love.graphics.rectangle("fill", 0, 0, VW, 52)
+  love.graphics.rectangle("fill", 0, VH - 30, VW, 30)
   love.graphics.setFont(scene.font)
   love.graphics.setColor(1, 1, 1)
   love.graphics.print(("SCORE  %06d"):format(w.score), 28, 16)
@@ -63,8 +67,8 @@ function scene.draw()
         sprites.coin((c - 1) * TILE, (r - 1) * TILE, TILE, w.time)
       elseif ch ~= " " then
         local opts
-        if ch == "P" then
-          opts = { pipeTop = (w:tileAt(c, r - 1) ~= "P") }
+        if ch == "#" then
+          opts = { grassTop = (w:tileAt(c, r - 1) ~= "#") }
         elseif ch == "F" then
           opts = { poleTop = (w:tileAt(c, r - 1) ~= "F") }
         end
