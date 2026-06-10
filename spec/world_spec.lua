@@ -168,3 +168,51 @@ describe("Goombas", function()
     assert.is_true(w.dead or w.lives < lives0 or w.player.invuln > 0)
   end)
 end)
+
+describe("Lasers", function()
+  it("fires a laser forward in the facing direction", function()
+    local w = World.new(flatLevel())
+    stepN(w, 20, {})
+    w.player.facing = 1
+    w:update(1 / 60, { shoot = true })
+    assert.are.equal(1, #w.lasers)
+    assert.is_true(w.lasers[1].vx > 0)
+    local x0 = w.lasers[1].x
+    w:update(1 / 60, {})
+    assert.is_true(w.lasers[1].x > x0)             -- flies straight, keeps moving
+  end)
+
+  it("fires left when facing left", function()
+    local w = World.new(flatLevel())
+    stepN(w, 20, {})
+    w.player.facing = -1
+    w:update(1 / 60, { shoot = true })
+    assert.is_true(w.lasers[1].vx < 0)
+  end)
+
+  it("rate-limits shots by the cooldown", function()
+    local w = World.new(flatLevel())
+    stepN(w, 20, {})
+    for _ = 1, 6 do w:update(1 / 60, { shoot = true }) end   -- ~0.1s < cooldown
+    assert.are.equal(1, #w.lasers)                 -- only one shot in that window
+  end)
+
+  it("kills a goomba it hits and is consumed", function()
+    local w = World.new(flatLevel({ goombas = { 10 } }))
+    stepN(w, 20, {})
+    local g = w.goombas[1]
+    w.lasers[#w.lasers + 1] = { x = g.x, y = g.y + 5, w = 36, h = 12, vx = 780, dir = 1, life = 1.8 }
+    w:update(1 / 60, {})
+    assert.is_true(w.goombas[1].dying)
+    assert.are.equal(0, #w.lasers)                 -- consumed on hit
+    assert.is_true(w.score >= 100)
+  end)
+
+  it("despawns when it hits a solid wall", function()
+    local w = World.new(flatLevel({ set = { { 10, 4, "#" }, { 10, 3, "#" } } }))
+    stepN(w, 20, {})
+    w.lasers[#w.lasers + 1] = { x = 8 * 48, y = 3 * 48 + 18, w = 36, h = 12, vx = 780, dir = 1, life = 1.8 }
+    for _ = 1, 20 do w:update(1 / 60, {}) end
+    assert.are.equal(0, #w.lasers)
+  end)
+end)

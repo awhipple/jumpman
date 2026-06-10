@@ -30,14 +30,30 @@ local function buildFall()
   return love.audio.newSource(data)
 end
 
+-- synthesized laser "pew": a fast downward square-wave chirp with a snappy decay.
+local function buildLaser()
+  local SR, dur = 44100, 0.16
+  local n = math.floor(SR * dur)
+  local data = love.sound.newSoundData(n, SR, 16, 1)
+  local phase = 0
+  for i = 0, n - 1 do
+    local p = i / n
+    local f = 1500 * (1 - p) + 380 * p          -- 1500Hz -> 380Hz
+    phase = phase + f / SR
+    local sq = ((phase % 1) < 0.5) and 1 or -1
+    data:setSample(i, sq * 0.4 * (1 - p))        -- linear decay
+  end
+  return love.audio.newSource(data)
+end
+
 function sfx.load()
   if _G.HARNESS or not love.audio then return end
   for name, path in pairs(FILES) do
     local ok, src = pcall(love.audio.newSource, path, "static")
     if ok then pool[name] = src end
   end
-  local ok, fall = pcall(buildFall)
-  if ok then pool.fall = fall end
+  local okf, fall = pcall(buildFall);  if okf then pool.fall = fall end
+  local okl, laser = pcall(buildLaser); if okl then pool.laser = laser end
 end
 
 function sfx.play(name, vol)

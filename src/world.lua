@@ -24,6 +24,11 @@ local AIR_ACC   = 1000      -- horizontal accel while airborne
 
 local GOOMBA_V  = 70
 
+local LASER_SPEED    = 780     -- px/s, constant — flies straight (no gravity/bounce)
+local LASER_COOLDOWN = 0.22    -- min seconds between shots (hold to auto-fire)
+local LASER_W, LASER_H = 36, 12
+local LASER_LIFE     = 1.8     -- seconds before it fizzles (safety despawn)
+
 local SOLID = { ["#"] = true, ["B"] = true, ["?"] = true, ["P"] = true,
                 ["U"] = true, ["="] = true }
 
@@ -59,6 +64,7 @@ function World.new(level)
     x = self.spawn.x, y = self.spawn.y, w = 34, h = 44,
     vx = 0, vy = 0, onGround = false, facing = 1,
     big = false, jumping = false, jumpHeld = false, invuln = 0,
+    shootCd = 0,
   }
 
   self.goombas = {}
@@ -70,6 +76,8 @@ function World.new(level)
     }
   end
 
+  self.lasers = {}      -- player's forward-flying laser bolts
+  self.shotsFired = 0   -- counter (scene watches it to fire the shoot sound)
   self.effects = {}     -- coin pops etc. (purely cosmetic)
   self.score, self.coins, self.lives = 0, 0, 3
   self.time = 0
@@ -133,6 +141,13 @@ function World:updatePlayer(dt, move)
   elseif p.onGround then
     local s = FRICTION * dt
     p.vx = (math.abs(p.vx) <= s) and 0 or (p.vx - s * sign(p.vx))
+  end
+
+  -- shoot (cooldown-gated; hold to auto-fire). Fires in the facing direction.
+  p.shootCd = math.max(0, p.shootCd - dt)
+  if move.shoot and p.shootCd <= 0 then
+    self:spawnLaser()
+    p.shootCd = LASER_COOLDOWN
   end
 
   -- jump (edge-triggered; variable height while held)
@@ -235,6 +250,48 @@ function World:playerGoombas()
   end
 end
 
+-- ---- lasers ---------------------------------------------------------------
+-- Unlike Mario's arcing fireball, a laser flies dead straight in the facing
+-- direction at constant speed (no gravity, no bounce) until it hits a wall,
+-- leaves the level, or times out.
+function World:spawnLaser()
+  local p = self.player
+  local dir = (p.facing < 0) and -1 or 1
+  local lx = (dir > 0) and (p.x + p.w) or (p.x - LASER_W)
+  self.lasers[#self.lasers + 1] = {
+    x = lx, y = p.y + p.h * 0.5 - LASER_H / 2,
+    w = LASER_W, h = LASER_H, vx = dir * LASER_SPEED, dir = dir, life = LASER_LIFE,
+  }
+  self.shotsFired = self.shotsFired + 1
+end
+
+function World:updateLasers(dt)
+  for i = #self.lasers, 1, -1 do
+    local L = self.lasers[i]
+    L.x = L.x + L.vx * dt
+    L.life = L.life - dt
+    local hitWall = self:solidAt(colAt(L.x + L.w / 2), rowAt(L.y + L.h / 2))
+    if L.life <= 0 or L.x + L.w < 0 or L.x > self.pxw or hitWall then
+      table.remove(self.lasers, i)
+    end
+  end
+end
+
+-- a laser that overlaps a live goomba kills it (and is consumed)
+function World:laserGoombas()
+  for li = #self.lasers, 1, -1 do
+    local L = self.lasers[li]
+    for _, g in ipairs(self.goombas) do
+      if not g.dying and overlap(L, g) then
+        g.dying = true; g.dyt = 0.35; g.vx = 0; g.h = 20; g.y = g.y + 20
+        self.score = self.score + 100
+        table.remove(self.lasers, li)
+        break
+      end
+    end
+  end
+end
+
 -- ---- pickups / goal -------------------------------------------------------
 function World:collectCoins()
   local p = self.player
@@ -280,6 +337,8 @@ function World:update(dt, move)
   self:updatePlayer(dt, move)
   self:updateGoombas(dt)
   self:playerGoombas()
+  self:updateLasers(dt)
+  self:laserGoombas()
   self:collectCoins()
   self.time = self.time + dt
 end

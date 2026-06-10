@@ -14,6 +14,8 @@ input.bindings = {
   jump  = { keys = { "space", "up", "z", "w" }, buttons = { "a", "b" } },
   -- run/dash: hold to move faster (classic B-button dash).
   run   = { keys = { "lshift", "rshift", "x" }, buttons = { "x", "y" } },
+  -- shoot the laser: Right Bumper (R1); keyboard mirror F.
+  shoot = { keys = { "f" },                     buttons = { "rightshoulder" } },
   -- quit: every game has a quit (button or menu) — Start / Esc here.
   quit  = { keys = { "escape" },                buttons = { "start" } },
 }

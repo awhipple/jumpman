@@ -25,6 +25,7 @@ local function snapshot(w)
   return {
     onGround = w.player.onGround, coins = w.coins, lives = w.lives,
     big = w.player.big, dead = w.dead, won = w.won, dying = dyingCount(w),
+    shots = w.shotsFired,
   }
 end
 
@@ -40,6 +41,7 @@ end
 
 -- compare this frame to last to fire one-shot sounds on state transitions
 local function playEvents(w, prev)
+  if w.shotsFired > prev.shots                  then sfx.play("laser", 0.45) end
   if prev.onGround and not w.player.onGround and w.player.vy < -50 then sfx.play("jump", 0.5) end
   if w.coins > prev.coins                       then sfx.play("coin", 0.55) end
   if dyingCount(w) > prev.dying                 then sfx.play("stomp", 0.6) end
@@ -57,6 +59,7 @@ function scene.update(dt)
     down  = input.down("down"),
     jump  = input.down("jump"),
     run   = input.down("run"),
+    shoot = input.down("shoot"),
   })
   playEvents(w, scene.prev)
   scene.prev = snapshot(w)
@@ -75,7 +78,7 @@ local function drawHUD(w)
   love.graphics.print(("TIME  %d"):format(math.max(0, math.floor(400 - w.time))), 720, 16)
   love.graphics.setFont(scene.small)
   love.graphics.setColor(1, 1, 1, 0.65)
-  love.graphics.printf("D-Pad move    A jump (hold = higher)    X run    Start quit",
+  love.graphics.printf("D-Pad move    A jump (hold=higher)    X run    R1 shoot    Start quit",
                       0, VH - 26, VW, "center")
 end
 
@@ -112,6 +115,7 @@ function scene.draw()
   end
 
   for _, g in ipairs(w.goombas) do sprites.goomba(g) end
+  for _, L in ipairs(w.lasers) do sprites.laser(L) end
   sprites.player(w.player)
 
   love.graphics.pop()

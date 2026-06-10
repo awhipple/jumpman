@@ -46,6 +46,31 @@ function sprites.player(p)
     frame = "player/idle.png"
   end
   drawBoxed(img(frame), p, p.facing, 2.0, 6)
+  -- held blaster, pointing the way the player faces
+  local g = img("player/blaster.png")
+  local giw, gih = g:getDimensions()
+  local gsc = (p.h * 0.78) / gih
+  local sx = (p.facing < 0) and -gsc or gsc
+  love.graphics.setColor(1, 1, 1)
+  love.graphics.draw(g, p.x + p.w / 2 + p.facing * p.w * 0.36, p.y + p.h * 0.56,
+                     0, sx, gsc, giw / 2, gih / 2)
+end
+
+-- a laser bolt: the art is a vertical bolt, so rotate 90° to fly horizontally
+function sprites.laser(L)
+  local image = img("fx/laser.png")
+  local iw, ih = image:getDimensions()
+  local len, thick = L.w + 20, L.h + 8
+  local rot = (L.dir < 0) and -math.pi / 2 or math.pi / 2
+  -- additive glow pass + tinted core so it reads as a hot energy bolt, not a white bar
+  love.graphics.setBlendMode("add")
+  love.graphics.setColor(1.0, 0.20, 0.30)
+  love.graphics.draw(image, L.x + L.w / 2, L.y + L.h / 2, rot,
+                     (thick * 1.6) / iw, (len * 1.15) / ih, iw / 2, ih / 2)
+  love.graphics.setBlendMode("alpha")
+  love.graphics.setColor(1.0, 0.45, 0.55)
+  love.graphics.draw(image, L.x + L.w / 2, L.y + L.h / 2, rot,
+                     thick / iw, len / ih, iw / 2, ih / 2)
 end
 
 function sprites.goomba(g)
