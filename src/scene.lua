@@ -40,7 +40,7 @@ local function drawHUD(w)
   love.graphics.print(("TIME  %d"):format(math.max(0, math.floor(400 - w.time))), 720, 16)
   love.graphics.setFont(scene.small)
   love.graphics.setColor(1, 1, 1, 0.65)
-  love.graphics.printf("Arrows / WASD move    Z / Space jump (hold = higher)    Shift run    Esc quit",
+  love.graphics.printf("D-Pad move    A jump (hold = higher)    X run    Start quit",
                       0, VH - 26, VW, "center")
 end
 
