@@ -73,6 +73,7 @@ end
 
 function love.load()
   parseArgs()
+  _G.HARNESS = harness.active     -- audio (music/sfx) stays silent under the harness
   canvas = love.graphics.newCanvas(VW, VH)
   scene.load()
 

@@ -32,6 +32,10 @@ trademark-clean.
 - **`src/scene.lua`** — camera, visible-tile culling, HUD (with readability bars),
   win overlay; wires input → world → sprites.
 - **`src/input.lua`** — action map (below).
+- **`src/music.lua`** — ORIGINAL background music, synthesized in pure Lua (a looping
+  4-bar chiptune; no audio file). **`src/sfx.lua`** — CC0 Kenney SFX (jump/coin/
+  stomp/bump/hurt/win) + a synthesized pit-fall sweep. Both silent under the harness
+  (`_G.HARNESS`, set in `main.lua`); `scene.lua` fires SFX on world state-edges.
 
 ### Tile glyphs (`level.lua` / `world.lua`)
 `#` ground · `B` brick (breakable only when big) · `?` coin-block → `U` spent ·

@@ -6,6 +6,8 @@ local World   = require("src.world")
 local level   = require("src.level")
 local input   = require("src.input")
 local sprites = require("src.sprites")
+local music   = require("src.music")
+local sfx     = require("src.sfx")
 
 local scene = {}
 
@@ -13,22 +15,51 @@ local VW, VH = 1280, 800
 local TILE = World.TILE
 local OY = VH - level.h * TILE        -- vertical offset (sky band on top)
 
+local function dyingCount(w)
+  local n = 0
+  for _, g in ipairs(w.goombas) do if g.dying then n = n + 1 end end
+  return n
+end
+
+local function snapshot(w)
+  return {
+    onGround = w.player.onGround, coins = w.coins, lives = w.lives,
+    big = w.player.big, dead = w.dead, won = w.won, dying = dyingCount(w),
+  }
+end
+
 function scene.load()
   scene.world = World.new(level)
   scene.bigfont = love.graphics.newFont(40)
   scene.font = love.graphics.newFont(22)
   scene.small = love.graphics.newFont(16)
+  sfx.load()
+  music.start()
+  scene.prev = snapshot(scene.world)
+end
+
+-- compare this frame to last to fire one-shot sounds on state transitions
+local function playEvents(w, prev)
+  if prev.onGround and not w.player.onGround and w.player.vy < -50 then sfx.play("jump", 0.5) end
+  if w.coins > prev.coins                       then sfx.play("coin", 0.55) end
+  if dyingCount(w) > prev.dying                 then sfx.play("stomp", 0.6) end
+  if prev.big and not w.player.big              then sfx.play("hurt", 0.6) end   -- shrank
+  if w.dead and not prev.dead                   then sfx.play("fall", 0.6) end   -- pit / death
+  if w.won and not prev.won then sfx.play("win", 0.7); music.stop() end
 end
 
 function scene.update(dt)
   if input.down("quit") then love.event.quit(); return end
-  scene.world:update(dt, {
+  local w = scene.world
+  w:update(dt, {
     left  = input.down("left"),
     right = input.down("right"),
     down  = input.down("down"),
     jump  = input.down("jump"),
     run   = input.down("run"),
   })
+  playEvents(w, scene.prev)
+  scene.prev = snapshot(w)
 end
 
 local function drawHUD(w)
