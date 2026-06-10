@@ -25,7 +25,7 @@ local function snapshot(w)
   return {
     onGround = w.player.onGround, coins = w.coins, lives = w.lives,
     big = w.player.big, dead = w.dead, won = w.won, dying = dyingCount(w),
-    shots = w.shotsFired,
+    shots = w.shotsFired, blaster = w.player.hasBlaster,
   }
 end
 
@@ -41,6 +41,7 @@ end
 
 -- compare this frame to last to fire one-shot sounds on state transitions
 local function playEvents(w, prev)
+  if w.player.hasBlaster and not prev.blaster   then sfx.play("powerup", 0.7) end
   if w.shotsFired > prev.shots                  then sfx.play("laser", 0.45) end
   if prev.onGround and not w.player.onGround and w.player.vy < -50 then sfx.play("jump", 0.5) end
   if w.coins > prev.coins                       then sfx.play("coin", 0.55) end
@@ -115,6 +116,7 @@ function scene.draw()
   end
 
   for _, g in ipairs(w.goombas) do sprites.goomba(g) end
+  for _, m in ipairs(w.powerups) do sprites.powerup(m) end
   for _, L in ipairs(w.lasers) do sprites.laser(L) end
   sprites.player(w.player)
 

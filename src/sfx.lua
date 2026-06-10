@@ -11,6 +11,7 @@ local FILES = {
   bump  = "assets/sfx/bump.ogg",
   hurt  = "assets/sfx/hurt.ogg",
   win   = "assets/sfx/win.ogg",
+  powerup = "assets/sfx/powerup.ogg",
 }
 
 -- synthesized "fall into a pit" sound: a descending square-wave pitch sweep with

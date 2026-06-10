@@ -173,6 +173,7 @@ describe("Lasers", function()
   it("fires a laser forward in the facing direction", function()
     local w = World.new(flatLevel())
     stepN(w, 20, {})
+    w.player.hasBlaster = true
     w.player.facing = 1
     w:update(1 / 60, { shoot = true })
     assert.are.equal(1, #w.lasers)
@@ -185,6 +186,7 @@ describe("Lasers", function()
   it("fires left when facing left", function()
     local w = World.new(flatLevel())
     stepN(w, 20, {})
+    w.player.hasBlaster = true
     w.player.facing = -1
     w:update(1 / 60, { shoot = true })
     assert.is_true(w.lasers[1].vx < 0)
@@ -193,6 +195,7 @@ describe("Lasers", function()
   it("rate-limits shots by the cooldown", function()
     local w = World.new(flatLevel())
     stepN(w, 20, {})
+    w.player.hasBlaster = true
     for _ = 1, 6 do w:update(1 / 60, { shoot = true }) end   -- ~0.1s < cooldown
     assert.are.equal(1, #w.lasers)                 -- only one shot in that window
   end)
@@ -214,5 +217,44 @@ describe("Lasers", function()
     w.lasers[#w.lasers + 1] = { x = 8 * 48, y = 3 * 48 + 18, w = 36, h = 12, vx = 780, dir = 1, life = 1.8 }
     for _ = 1, 20 do w:update(1 / 60, {}) end
     assert.are.equal(0, #w.lasers)
+  end)
+end)
+
+describe("Blaster power-up", function()
+  it("cannot shoot without the blaster", function()
+    local w = World.new(flatLevel())
+    stepN(w, 20, {})
+    for _ = 1, 6 do w:update(1 / 60, { shoot = true }) end
+    assert.is_false(w.player.hasBlaster)
+    assert.are.equal(0, #w.lasers)
+  end)
+
+  it("the gun block releases a blaster power-up when bonked", function()
+    local w = World.new(flatLevel({ set = { { 3, 2, "G" } } }))
+    stepN(w, 20, {})
+    w.player.x = 2 * TILE
+    for _ = 1, 200 do
+      w:update(1 / 60, { jump = true })
+      if w.tiles[2][3] == "U" then break end
+      w:update(1 / 60, {})
+    end
+    assert.are.equal("U", w.tiles[2][3])
+    assert.is_true(#w.powerups >= 1)
+    assert.are.equal("blaster", w.powerups[1].kind)
+  end)
+
+  it("collecting the blaster enables shooting", function()
+    local w = World.new(flatLevel())
+    stepN(w, 20, {})
+    local p = w.player
+    w.powerups[#w.powerups + 1] = {
+      kind = "blaster", x = p.x, y = p.y, w = 36, h = 36,
+      vx = 0, vy = 0, state = "active", emergeTop = 0,
+    }
+    w:update(1 / 60, {})
+    assert.is_true(p.hasBlaster)
+    assert.are.equal(0, #w.powerups)        -- consumed
+    w:update(1 / 60, { shoot = true })
+    assert.are.equal(1, #w.lasers)          -- now shooting works
   end)
 end)

@@ -31,7 +31,7 @@ fillGround(110, W)
 
 -- a low row of bricks/blocks the player can bonk (row 10: ~3 tiles above ground)
 local BR = 10
-set(17, BR, "?")
+set(17, BR, "G")   -- gun block: bonk it to release the blaster power-up
 -- brick + coin-block cluster, coins floating above
 for i, ch in ipairs({ "B", "?", "B", "B", "?", "B" }) do set(20 + i, BR, ch) end
 for c = 22, 26 do set(c, BR - 2, "o") end

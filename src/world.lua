@@ -30,7 +30,7 @@ local LASER_W, LASER_H = 36, 12
 local LASER_LIFE     = 1.8     -- seconds before it fizzles (safety despawn)
 
 local SOLID = { ["#"] = true, ["B"] = true, ["?"] = true, ["P"] = true,
-                ["U"] = true, ["="] = true }
+                ["U"] = true, ["="] = true, ["G"] = true }
 
 local function sign(n) return n > 0 and 1 or (n < 0 and -1 or 0) end
 local function clamp(v, lo, hi) return v < lo and lo or (v > hi and hi or v) end
@@ -64,7 +64,7 @@ function World.new(level)
     x = self.spawn.x, y = self.spawn.y, w = 34, h = 44,
     vx = 0, vy = 0, onGround = false, facing = 1,
     big = false, jumping = false, jumpHeld = false, invuln = 0,
-    shootCd = 0,
+    shootCd = 0, hasBlaster = false,
   }
 
   self.goombas = {}
@@ -78,6 +78,7 @@ function World.new(level)
 
   self.lasers = {}      -- player's forward-flying laser bolts
   self.shotsFired = 0   -- counter (scene watches it to fire the shoot sound)
+  self.powerups = {}    -- items that popped out of blocks (e.g. the blaster)
   self.effects = {}     -- coin pops etc. (purely cosmetic)
   self.score, self.coins, self.lives = 0, 0, 3
   self.time = 0
@@ -143,9 +144,9 @@ function World:updatePlayer(dt, move)
     p.vx = (math.abs(p.vx) <= s) and 0 or (p.vx - s * sign(p.vx))
   end
 
-  -- shoot (cooldown-gated; hold to auto-fire). Fires in the facing direction.
+  -- shoot (needs the blaster power-up; cooldown-gated; hold to auto-fire)
   p.shootCd = math.max(0, p.shootCd - dt)
-  if move.shoot and p.shootCd <= 0 then
+  if move.shoot and p.shootCd <= 0 and p.hasBlaster then
     self:spawnLaser()
     p.shootCd = LASER_COOLDOWN
   end
@@ -180,6 +181,10 @@ function World:bumpBlock(c, r)
     self.coins = self.coins + 1
     self.score = self.score + 200
     self:coinPop(c, r)
+  elseif ch == "G" then
+    self.tiles[r][c] = "U"
+    self.score = self.score + 100
+    self:spawnPowerup(c, r, "blaster")
   elseif ch == "B" and self.player.big then
     self.tiles[r][c] = " "
     self.score = self.score + 50
@@ -292,6 +297,50 @@ function World:laserGoombas()
   end
 end
 
+-- ---- power-ups (block → item the player must collect) ---------------------
+-- Emerges up out of the block, then drifts + falls like a mushroom until caught.
+function World:spawnPowerup(c, r, kind)
+  local blockTop = (r - 1) * TILE
+  local h = TILE - 12
+  self.powerups[#self.powerups + 1] = {
+    kind = kind, x = (c - 1) * TILE + 6, y = blockTop,
+    w = TILE - 12, h = h, vx = 0, vy = 0,
+    state = "emerging", emergeTop = blockTop - h - 2,
+  }
+end
+
+function World:updatePowerups(dt)
+  for i = #self.powerups, 1, -1 do
+    local m = self.powerups[i]
+    if m.state == "emerging" then
+      m.y = m.y - 90 * dt
+      if m.y <= m.emergeTop then
+        m.y = m.emergeTop; m.state = "active"; m.vx = 70
+      end
+    else
+      m.vy = math.min(m.vy + GRAVITY * dt, MAX_FALL)
+      m.x = m.x + m.vx * dt
+      if self:resolve(m, "x") then m.vx = -m.vx end
+      m.y = m.y + m.vy * dt
+      self:resolve(m, "y")
+      if m.y > self.pxh then table.remove(self.powerups, i) end
+    end
+  end
+end
+
+function World:collectPowerups()
+  local p = self.player
+  for i = #self.powerups, 1, -1 do
+    if overlap(p, self.powerups[i]) then
+      if self.powerups[i].kind == "blaster" then
+        p.hasBlaster = true
+        self.score = self.score + 1000
+      end
+      table.remove(self.powerups, i)
+    end
+  end
+end
+
 -- ---- pickups / goal -------------------------------------------------------
 function World:collectCoins()
   local p = self.player
@@ -339,6 +388,8 @@ function World:update(dt, move)
   self:playerGoombas()
   self:updateLasers(dt)
   self:laserGoombas()
+  self:updatePowerups(dt)
+  self:collectPowerups()
   self:collectCoins()
   self.time = self.time + dt
 end

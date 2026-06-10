@@ -46,14 +46,45 @@ function sprites.player(p)
     frame = "player/idle.png"
   end
   drawBoxed(img(frame), p, p.facing, 2.0, 6)
-  -- held blaster, pointing the way the player faces
-  local g = img("player/blaster.png")
-  local giw, gih = g:getDimensions()
-  local gsc = (p.h * 0.78) / gih
-  local sx = (p.facing < 0) and -gsc or gsc
+
+  -- held blaster (only once the power-up is collected). Anchored DOWN at the hand
+  -- stub (~74% of the body, out to the side), and bobbed with the walk cycle +
+  -- a short arm drawn to the grip so it reads as held, not floating.
+  if p.hasBlaster then
+    local walking = p.onGround and math.abs(p.vx) > 25
+    local up = walking and (anim(10, 2) == 0)        -- alternate step pose
+    local bob  = walking and (up and -3 or 1) or 0
+    local tilt = walking and (up and -0.10 or 0.05) or 0
+    local hx = p.x + p.w / 2 + p.facing * p.w * 0.60
+    local hy = p.y + p.h * 0.74 + bob
+    -- short arm: shoulder -> grip, dark outline then green fill (matches the hero)
+    local shx, shy = p.x + p.w / 2 + p.facing * p.w * 0.22, p.y + p.h * 0.66
+    love.graphics.setColor(0.10, 0.16, 0.16)
+    love.graphics.setLineWidth(9); love.graphics.line(shx, shy, hx, hy)
+    love.graphics.setColor(0.45, 0.78, 0.55)
+    love.graphics.setLineWidth(5); love.graphics.line(shx, shy, hx, hy)
+    love.graphics.setLineWidth(1)
+    -- the gun
+    local g = img("player/blaster.png")
+    local giw, gih = g:getDimensions()
+    local gsc = (p.h * 0.6) / gih
+    local sx = (p.facing < 0) and -gsc or gsc
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(g, hx, hy, p.facing * tilt, sx, gsc, giw / 2, gih / 2)
+  end
+end
+
+-- a power-up item (the blaster popped from a block), gently bobbing
+function sprites.powerup(m)
+  local image = img("player/blaster.png")
+  local iw, ih = image:getDimensions()
+  local sc = (m.h * 1.25) / ih
+  local bob = math.sin(love.timer.getTime() * 5) * 2
+  -- soft highlight so it reads as a collectible
+  love.graphics.setColor(1, 1, 0.7, 0.25)
+  love.graphics.circle("fill", m.x + m.w / 2, m.y + m.h / 2 + bob, m.w * 0.7)
   love.graphics.setColor(1, 1, 1)
-  love.graphics.draw(g, p.x + p.w / 2 + p.facing * p.w * 0.36, p.y + p.h * 0.56,
-                     0, sx, gsc, giw / 2, gih / 2)
+  love.graphics.draw(image, m.x + m.w / 2, m.y + m.h / 2 + bob, 0, sc, sc, iw / 2, ih / 2)
 end
 
 -- a laser bolt: the art is a vertical bolt, so rotate 90° to fly horizontally
@@ -96,6 +127,7 @@ end
 local TILE_IMG = {
   ["B"] = "tiles/brick.png",
   ["?"] = "tiles/qblock.png",
+  ["G"] = "tiles/gblock.png",   -- gun block (exclamation) → blaster power-up
   ["U"] = "tiles/used.png",
   ["P"] = "tiles/block.png",    -- green block stack (replaces the Mario pipe)
   ["="] = "tiles/used.png",     -- end-castle stub

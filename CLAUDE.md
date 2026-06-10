@@ -8,11 +8,13 @@ A side-scrolling platformer with *Super Mario Bros.*-style **physics/feel** but 
 deliberately **non-Mario look**: it's re-skinned with Kenney's CC0 **"New Platformer
 Pack"** (clean vector art) — green round-headed hero, purple slime enemy, grass/dirt
 terrain, brick & coin blocks, hex coins, green-block pillars (in place of pipes),
-and a green flag goal. The hero also carries a **laser blaster** (Right Bumper) —
-bolts fly dead-straight in the facing direction and vaporize slimes (no gravity or
-bounce, unlike Mario's arcing fireball). Core loop: run, jump, and shoot rightward
-across a tile course, bonk `?`-blocks for coins, stomp or blast slimes, dodge pits,
-reach the flag.
+and a green flag goal. A **blaster power-up** is hidden in the **`!` block** near the
+start: bonk it to pop the blaster out, then **walk over it to collect** — only then
+can the hero shoot (held in-hand with a bobbing arm). With it, **Right Bumper** fires
+**laser bolts** that fly dead-straight in the facing direction and vaporize slimes
+(no gravity or bounce, unlike Mario's arcing fireball). Core loop: run, jump, grab
+the blaster, then shoot/stomp slimes, bonk `?`-blocks for coins, dodge pits, reach
+the flag.
 
 Art lives in `assets/` (player/ enemy/ tiles/ bg/), copied from
 `asset-library/new-platformer-pack` — **CC0, no attribution required**
@@ -42,8 +44,9 @@ trademark-clean.
 
 ### Tile glyphs (`level.lua` / `world.lua`)
 `#` ground · `B` brick (breakable only when big) · `?` coin-block → `U` spent ·
-`P` solid pillar (drawn as a green block; logic still treats it like the old pipe) ·
-`o` coin · `F` flag pole · `=` castle/base. Spawns: `@` player, `g` slime.
+`G` gun-block (`!`, releases the blaster power-up) → `U` · `P` solid pillar (green
+block; logic treats it like the old pipe) · `o` coin · `F` flag · `=` castle/base.
+Spawns: `@` player, `g` slime.
 
 ## Controls (gamepad-first; keyboard mirrors)
 | action | keyboard | gamepad |
@@ -58,8 +61,9 @@ Harness example: `tools/shot jumpman --keys "right+run:54,jump+right:14,right:28
 
 ## Status / TODO
 Working: physics, collision, camera, slimes + stomp, coins, `?`-blocks, flag win,
-death/respawn, HUD, parallax background, **Kenney CC0 art re-skin**, **laser blaster**
-(forward bolts that kill slimes), music + SFX. 19 specs green.
+death/respawn, HUD, parallax background, **Kenney CC0 art re-skin**, **blaster
+power-up** (`!` block → collect → forward laser bolts; held in-hand w/ walk bob),
+music + SFX. 22 specs green.
 Next: mushroom power-up (big/small code paths exist but no spawn yet) · flag-slide
 + level-complete sequence · more enemies (koopa) · sound · additional courses ·
 juice (stomp squash already in; add coin-collect sparkle, landing dust).
