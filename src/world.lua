@@ -44,6 +44,7 @@ end
 function World.new(level)
   local self = setmetatable({}, World)
   self.level = level
+  self.theme = level.theme or "overworld"
   self.w, self.h = level.w, level.h
   self.pxw, self.pxh = level.w * TILE, level.h * TILE
 

@@ -1,9 +1,11 @@
 -- scene.lua — wires pure logic (world) to rendering + input. love.* lives here.
 -- Camera follows the player; only on-screen tiles are drawn. The world canvas is
--- 1280x800 (Deck-native); the level (15 tiles ≈ 720px) sits on an 80px sky band.
+-- 1280x800 (Deck-native); the level sits on a band offset (VH - level height).
+-- Multiple levels: clear one and it advances to the next (carrying score/lives/
+-- blaster), each with its own theme (overworld / underground).
 
 local World   = require("src.world")
-local level   = require("src.level")
+local levels  = { require("src.level"), require("src.level2") }
 local input   = require("src.input")
 local sprites = require("src.sprites")
 local music   = require("src.music")
@@ -13,7 +15,7 @@ local scene = {}
 
 local VW, VH = 1280, 800
 local TILE = World.TILE
-local OY = VH - level.h * TILE        -- vertical offset (sky band on top)
+local LEVEL_CLEAR_DELAY = 2.4         -- banner time before advancing to the next level
 
 local function dyingCount(w)
   local n = 0
@@ -29,14 +31,32 @@ local function snapshot(w)
   }
 end
 
+-- build a level's world, apply its theme, carry stats forward from the last level
+local function buildWorld(index, carry)
+  local w = World.new(levels[index])
+  sprites.setTheme(w.theme)
+  if carry then
+    w.score = carry.score
+    w.lives = carry.lives
+    w.player.hasBlaster = carry.hasBlaster
+  end
+  return w
+end
+
+function scene.loadLevel(index, carry)
+  scene.levelIndex = index
+  scene.world = buildWorld(index, carry)
+  scene.transition = nil
+  scene.prev = snapshot(scene.world)
+end
+
 function scene.load()
-  scene.world = World.new(level)
   scene.bigfont = love.graphics.newFont(40)
   scene.font = love.graphics.newFont(22)
   scene.small = love.graphics.newFont(16)
   sfx.load()
   music.start()
-  scene.prev = snapshot(scene.world)
+  scene.loadLevel(1)
 end
 
 -- compare this frame to last to fire one-shot sounds on state transitions
@@ -48,12 +68,23 @@ local function playEvents(w, prev)
   if dyingCount(w) > prev.dying                 then sfx.play("stomp", 0.6) end
   if prev.big and not w.player.big              then sfx.play("hurt", 0.6) end   -- shrank
   if w.dead and not prev.dead                   then sfx.play("fall", 0.6) end   -- pit / death
-  if w.won and not prev.won then sfx.play("win", 0.7); music.stop() end
+  if w.won and not prev.won                     then sfx.play("win", 0.7) end
 end
 
 function scene.update(dt)
   if input.down("quit") then love.event.quit(); return end
   local w = scene.world
+
+  if w.won then                       -- level cleared: hold the banner, then advance
+    scene.transition = (scene.transition or LEVEL_CLEAR_DELAY) - dt
+    if scene.transition <= 0 and scene.levelIndex < #levels then
+      scene.loadLevel(scene.levelIndex + 1, {
+        score = w.score, lives = w.lives, hasBlaster = w.player.hasBlaster,
+      })
+    end
+    return
+  end
+
   w:update(dt, {
     left  = input.down("left"),
     right = input.down("right"),
@@ -75,8 +106,9 @@ local function drawHUD(w)
   love.graphics.setColor(1, 1, 1)
   love.graphics.print(("SCORE  %06d"):format(w.score), 28, 16)
   love.graphics.print(("COINS  %02d"):format(w.coins), 300, 16)
-  love.graphics.print(("LIVES  %d"):format(math.max(0, w.lives)), 520, 16)
-  love.graphics.print(("TIME  %d"):format(math.max(0, math.floor(400 - w.time))), 720, 16)
+  love.graphics.print(("LIVES  %d"):format(math.max(0, w.lives)), 500, 16)
+  love.graphics.print(("WORLD  1-%d"):format(scene.levelIndex), 680, 16)
+  love.graphics.print(("TIME  %d"):format(math.max(0, math.floor(400 - w.time))), 900, 16)
   love.graphics.setFont(scene.small)
   love.graphics.setColor(1, 1, 1, 0.65)
   love.graphics.printf("D-Pad move    A jump (hold=higher)    X run    R1 shoot    Start quit",
@@ -86,11 +118,12 @@ end
 function scene.draw()
   local w = scene.world
   local camX = w:cameraX(VW)
+  local oy = VH - w.h * TILE
 
   sprites.background(camX, VW, VH)
 
   love.graphics.push()
-  love.graphics.translate(-camX, OY)
+  love.graphics.translate(-camX, oy)
 
   -- visible tile range
   local c0 = math.max(1, math.floor(camX / TILE))
@@ -125,11 +158,12 @@ function scene.draw()
   drawHUD(w)
 
   if w.won then
+    local last = scene.levelIndex >= #levels
     love.graphics.setColor(0, 0, 0, 0.45)
     love.graphics.rectangle("fill", 0, VH / 2 - 70, VW, 140)
     love.graphics.setFont(scene.bigfont)
     love.graphics.setColor(1, 0.95, 0.4)
-    love.graphics.printf("COURSE CLEAR!", 0, VH / 2 - 24, VW, "center")
+    love.graphics.printf(last and "YOU WIN!" or "LEVEL CLEAR!", 0, VH / 2 - 24, VW, "center")
   end
 end
 

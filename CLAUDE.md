@@ -14,7 +14,8 @@ can the hero shoot (held in-hand with a bobbing arm). With it, **Right Bumper** 
 **laser bolts** that fly dead-straight in the facing direction and vaporize slimes
 (no gravity or bounce, unlike Mario's arcing fireball). Core loop: run, jump, grab
 the blaster, then shoot/stomp slimes, bonk `?`-blocks for coins, dodge pits, reach
-the flag.
+the flag. **Two courses:** overworld **1-1**, then a darker **underground 1-2**
+(SMB-style) — clear one to advance, carrying score/lives/blaster.
 
 Art lives in `assets/` (player/ enemy/ tiles/ bg/), copied from
 `asset-library/new-platformer-pack` — **CC0, no attribution required**
@@ -29,8 +30,13 @@ trademark-clean.
 - **`src/world.lua`** — PURE logic (no `love.*`): tile-grid AABB collision
   (axis-separated), run/jump physics with **variable jump height** (hold = higher),
   goomba AI + stomp, coins/`?`-blocks, flag goal. Fully busted-tested.
-- **`src/level.lua`** — the course, built **programmatically** (not hand-aligned
-  ASCII) so column placement is exact and verifiable. Returns `{w,h,grid,spawns}`.
+- **`src/level.lua`** (overworld) + **`src/level2.lua`** (underground) — the courses,
+  built **programmatically** (not hand-aligned ASCII) so column placement is exact.
+  Each returns `{w,h,grid,spawns,theme}`. `scene.lua` holds the ordered `levels`
+  list; clearing one advances to the next, carrying score/lives/blaster.
+  **Themes** (`theme` field → `sprites.setTheme`) swap ground/brick/pillar art +
+  background: `overworld` (grass/dirt + parallax hills) vs `underground` (stone/grey
+  brick/blue block + dark cavern).
 - **`src/sprites.lua`** — rendering edge (the `love.*` side): loads the Kenney PNGs
   from `assets/` and draws player/enemy/tiles/coins/background (image cache + simple
   walk-cycle animation off the wall clock).
@@ -63,7 +69,8 @@ Harness example: `tools/shot jumpman --keys "right+run:54,jump+right:14,right:28
 Working: physics, collision, camera, slimes + stomp, coins, `?`-blocks, flag win,
 death/respawn, HUD, parallax background, **Kenney CC0 art re-skin**, **blaster
 power-up** (`!` block → collect → forward laser bolts; held in-hand w/ walk bob),
-music + SFX. 22 specs green.
+music + SFX, **two levels** (overworld 1-1 → underground 1-2) with theme swap +
+carry-over progression. 30 specs green.
 Next: mushroom power-up (big/small code paths exist but no spawn yet) · flag-slide
 + level-complete sequence · more enemies (koopa) · sound · additional courses ·
 juice (stomp squash already in; add coin-collect sparkle, landing dust).

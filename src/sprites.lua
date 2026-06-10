@@ -124,12 +124,21 @@ function sprites.coin(x, y, s, t)
 end
 
 -- ---- tiles ----------------------------------------------------------------
+-- per-level theme: ground/brick/pillar art + background style (set by scene)
+local THEME = {
+  overworld = { top = "tiles/ground_top.png", dirt = "tiles/ground_dirt.png",
+                brick = "tiles/brick.png", block = "tiles/block.png", bg = "parallax" },
+  underground = { top = "tiles/under_ground_top.png", dirt = "tiles/under_ground_dirt.png",
+                  brick = "tiles/under_brick.png", block = "tiles/under_block.png", bg = "dark" },
+}
+local theme = THEME.overworld
+function sprites.setTheme(name) theme = THEME[name] or THEME.overworld end
+
+-- theme-independent tiles
 local TILE_IMG = {
-  ["B"] = "tiles/brick.png",
   ["?"] = "tiles/qblock.png",
   ["G"] = "tiles/gblock.png",   -- gun block (exclamation) → blaster power-up
   ["U"] = "tiles/used.png",
-  ["P"] = "tiles/block.png",    -- green block stack (replaces the Mario pipe)
   ["="] = "tiles/used.png",     -- end-castle stub
 }
 
@@ -146,9 +155,11 @@ function sprites.tile(ch, x, y, s, opts, t)
     return
   end
 
-  local path = (ch == "#")
-    and (opts.grassTop and "tiles/ground_top.png" or "tiles/ground_dirt.png")
-    or TILE_IMG[ch]
+  local path
+  if ch == "#" then path = opts.grassTop and theme.top or theme.dirt
+  elseif ch == "B" then path = theme.brick
+  elseif ch == "P" then path = theme.block
+  else path = TILE_IMG[ch] end
   if not path then return end
 
   local image = img(path)
@@ -157,8 +168,16 @@ function sprites.tile(ch, x, y, s, opts, t)
   love.graphics.draw(image, x, y, 0, s / iw, s / ih)
 end
 
--- ---- parallax background --------------------------------------------------
+-- ---- background -----------------------------------------------------------
 function sprites.background(camX, vw, vh)
+  if theme.bg == "dark" then                 -- underground: dim cavern gradient
+    for i = 0, 24 do
+      local f = i / 24
+      love.graphics.setColor(0.05 + 0.04 * f, 0.05 + 0.03 * f, 0.09 + 0.05 * f)
+      love.graphics.rectangle("fill", 0, vh * f, vw, vh / 24 + 1)
+    end
+    return
+  end
   local image = img("bg/hills.png")
   local iw, ih = image:getDimensions()
   local scale = vh / ih

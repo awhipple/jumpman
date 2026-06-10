@@ -93,6 +93,7 @@ return {
   w = W,
   h = H,
   ground_row = GROUND,
+  theme = "overworld",
   grid = rows,         -- array of H strings, each W chars
   spawns = spawns,
 }
