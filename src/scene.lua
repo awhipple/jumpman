@@ -56,6 +56,8 @@ function scene.load()
   scene.small = love.graphics.newFont(16)
   sfx.load()
   music.start()
+  scene.age = 0          -- seconds since launch (quit grace period)
+  scene.quitPrev = false -- for edge-triggered quit
   scene.loadLevel(1)
 end
 
@@ -72,7 +74,15 @@ local function playEvents(w, prev)
 end
 
 function scene.update(dt)
-  if input.down("quit") then love.event.quit(); return end
+  -- Quit only on a FRESH press, and never in the first moments after launch — so a
+  -- button still held from the launcher menu can't immediately snap the game shut.
+  scene.age = scene.age + dt
+  local q = input.down("quit")
+  if scene.age > 0.4 and q and not scene.quitPrev then
+    scene.quitPrev = q; love.event.quit(); return
+  end
+  scene.quitPrev = q
+
   local w = scene.world
 
   if w.won then                       -- level cleared: hold the banner, then advance
