@@ -1,21 +1,24 @@
 -- input.lua — action-name input abstraction (gamepad-first, keyboard mirrors).
--- Query with input.down("left"). In the screenshot harness, scripted input is fed
+-- Query with input.down("jump"). In the screenshot harness, scripted input is fed
 -- via input.setOverride(set), so the same action queries drive both real play and
--- `tools/shot --keys`.
+-- `tools/shot --keys "right:40,right+jump:18"`.
 
 local input = {}
 
--- action -> { keys = {...}, buttons = {...} }  (Deck-friendly defaults)
+-- action -> { keys = {...}, buttons = {...} }  (Steam Deck-friendly defaults)
 input.bindings = {
-  left   = { keys = { "left",  "a" }, buttons = { "dpleft"  } },
-  right  = { keys = { "right", "d" }, buttons = { "dpright" } },
-  up     = { keys = { "up",    "w" }, buttons = { "dpup"    } },
-  down   = { keys = { "down",  "s" }, buttons = { "dpdown"  } },
-  action = { keys = { "space", "return" }, buttons = { "a" } },
-  cancel = { keys = { "escape", "backspace" }, buttons = { "b" } },
+  left  = { keys = { "left",  "a" },            buttons = { "dpleft"  } },
+  right = { keys = { "right", "d" },            buttons = { "dpright" } },
+  down  = { keys = { "down",  "s" },            buttons = { "dpdown"  } },
+  -- A/B button / space / up to jump; hold for a higher jump.
+  jump  = { keys = { "space", "up", "z", "w" }, buttons = { "a", "b" } },
+  -- run/dash: hold to move faster (classic B-button dash).
+  run   = { keys = { "lshift", "rshift", "x" }, buttons = { "x", "y" } },
+  -- quit: every game has a quit (button or menu) — Start / Esc here.
+  quit  = { keys = { "escape" },                buttons = { "start" } },
 }
 
-input.override = nil  -- when non-nil (harness), a set: { action = true, ... }
+input.override = nil  -- when non-nil (harness), a set: { jump = true, ... }
 
 function input.setOverride(set) input.override = set end
 
