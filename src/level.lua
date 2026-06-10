@@ -72,9 +72,10 @@ for i = 0, 3 do
 end
 
 -- flag pole + base, then a couple of "castle" blocks
+-- goal flag: a single tile planted on the surface (the Kenney flag art is a
+-- flag-on-a-post, not a tall pole — sprites.lua draws it large, ground-anchored).
 local FCOL = 165
-for r = 3, GROUND do set(FCOL, r, "F") end
-set(FCOL, 2, "F")                       -- pole topper
+set(FCOL, GROUND - 1, "F")
 for c = 170, 172 do                     -- castle stub
   set(c, GROUND, "=")
   set(c, GROUND - 1, "=")

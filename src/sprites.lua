@@ -79,22 +79,13 @@ local TILE_IMG = {
 function sprites.tile(ch, x, y, s, opts, t)
   opts = opts or {}
   if ch == "F" then
-    -- The Kenney flag sprite has its OWN orange pole baked into its left edge, so
-    -- we draw the lower pole in matching orange, aligned to where that pole lands,
-    -- and fit the flag sprite to the top tile so the two pole segments are one line.
-    local poleX, poleW = x + s * 0.20, s * 0.13
-    love.graphics.setColor(0.91, 0.46, 0.23)
-    love.graphics.rectangle("fill", poleX, y, poleW, s)
-    love.graphics.setColor(0.74, 0.30, 0.14)                 -- shaded side
-    love.graphics.rectangle("fill", poleX + poleW * 0.62, y, poleW * 0.38, s)
-    if opts.poleTop then
-      local image = img("tiles/flag.png")
-      local iw, ih = image:getDimensions()
-      love.graphics.setColor(1, 1, 1)
-      love.graphics.draw(image, x, y, 0, s / iw, s / ih)      -- fit tile, pole-aligned
-      love.graphics.setColor(0.93, 0.84, 0.30)               -- finial ball on top
-      love.graphics.circle("fill", poleX + poleW * 0.5, y + s * 0.04, s * 0.10)
-    end
+    -- the flag art is a self-contained flag-on-a-post; draw it large and anchored
+    -- bottom-center to the tile's base (the ground surface) — no separate pole.
+    local image = img("tiles/flag.png")
+    local iw, ih = image:getDimensions()
+    local sc = (s * 2.7) / ih
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(image, x + s * 0.5, y + s, 0, sc, sc, iw / 2, ih)
     return
   end
 

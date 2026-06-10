@@ -100,8 +100,6 @@ function scene.draw()
         local opts
         if ch == "#" then
           opts = { grassTop = (w:tileAt(c, r - 1) ~= "#") }
-        elseif ch == "F" then
-          opts = { poleTop = (w:tileAt(c, r - 1) ~= "F") }
         end
         sprites.tile(ch, (c - 1) * TILE, (r - 1) * TILE, TILE, opts, w.time)
       end
